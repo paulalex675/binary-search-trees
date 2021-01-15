@@ -47,7 +47,7 @@ class BinaryTree
         @root = Node.new(array[1], Node.new(array[0], nil, nil), nil)
       else
         mid = array.length/2
-        @root = Node.new(array[mid], build_tree(array.slice(0..mid)), build_tree(array.slice(mid...-1)))
+        @root = Node.new(array[mid], build_tree(array.slice(0...mid)), build_tree(array.slice(mid+1..-1)))
       end
     end
 
