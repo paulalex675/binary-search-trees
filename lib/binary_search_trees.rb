@@ -10,12 +10,13 @@ class Node
 end
 
 class BinaryTree
-  attr_accessor :root, :value, :leaf_nodes
+  attr_accessor :root, :value, :leaf_nodes, :temp_queue
 
   def initialize(ary)
       @value = merge_sort(ary)
       @root = build_tree(@value)
       @leaf_nodes = Array.new
+      @temp_queue = Array.new
       leaf_node_count
       depth_counter = 0
       height_counter  = 0
@@ -99,7 +100,6 @@ class BinaryTree
     end
     @leaf_nodes.delete(to_del)
     @value.delete(to_del.data)
-    puts @value
   end
 
   def find_parent(value, node = self.root)
@@ -130,8 +130,13 @@ class BinaryTree
     end
   end
 
-  def level_order(value)
-
+  def level_order(node = self.root)
+    if node != nil
+      @temp_queue << node.data
+      level_order(node.left)
+      level_order(node.right)
+    end
+    return @temp_queue
   end
 
   def inorder
@@ -154,7 +159,7 @@ class BinaryTree
 
   end
 
-  def balanced?
+  def balanced?(counter = 0, node = self.root)
 
   end
 

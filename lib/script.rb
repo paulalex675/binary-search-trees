@@ -11,5 +11,6 @@ tree1.how_many_leaves?
 #tree1.leaf_node(10)
 #puts tree1.find(7).data
 #puts tree1.find_parent(8)
-p tree1.delete(900)
+tree1.delete(900)
 pp tree1
+p tree1.level_order()
