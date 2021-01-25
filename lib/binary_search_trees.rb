@@ -2,7 +2,7 @@ class Node
   include Comparable
     attr_accessor :left, :right, :data, :leaf_node
     
-    def initialize(data, left, right)
+    def initialize(data, left = nil, right = nil)
         @data = data
         @left = left
         @right = right
@@ -10,16 +10,13 @@ class Node
 end
 
 class BinaryTree
-  attr_accessor :root, :value, :leaf_nodes, :temp_queue
+  attr_accessor :root, :value, :leaf_nodes
 
   def initialize(ary)
       @value = merge_sort(ary)
       @root = build_tree(@value)
       @leaf_nodes = Array.new
-      @temp_queue = Array.new
       leaf_node_count
-      depth_counter = 0
-      height_counter  = 0
   end
     
   def merge_sort(array)
@@ -50,7 +47,7 @@ class BinaryTree
     return nil if array.empty?
 
     if array.length <= 1
-      @root = Node.new(array[0], nil, nil)
+      @root = Node.new(array[0])
     else
       mid = array.length/2
       @root = Node.new(array[mid], build_tree(array.slice(0...mid)), build_tree(array.slice(mid+1..array.length)))
@@ -62,59 +59,45 @@ class BinaryTree
       return 'That node already exists'
     elsif value < node.data
       if node.left == nil
-        node.left = Node.new(value, nil, nil)
+        node.left = Node.new(value)
       else insert(value, node.left)
       end
     else
       if node.right == nil
-        node.right = Node.new(value, nil, nil)
+        node.right = Node.new(value)
       else insert(value, node.right)
       end
     end
   end
 
-  def delete(value)
-    to_del = find(value)
-    parent = find_parent(value)
-    if parent.left == to_del
-      if parent.left.left == nil && parent.left.right == nil
-        parent.left = nil
-      elsif parent.left.left != nil && parent.left.right == nil
-        parent.left = parent.left.left
-        parent.left.left = nil
-      elsif parent.left.left != nil && parent.left.right != nil
-        parent.left = parent.left.right
-      else
-        puts "still working on that" 
-      end
-    elsif parent.right == to_del
-      if parent.right.right == nil && parent.right.left == nil
-        parent.right = nil
-      elsif parent.right.right != nil && parent.right.left == nil
-        parent.right = parent.right.right
-        parent.right.right = nil
-      elsif parent.right.right != nil && parent.right.left != nil
-        parent.right = parent.right.left
-      else puts "still workingon that"
-      end
+  def delete(value, node = self.root)
+    return node if node.nil?
+
+    if value < node.data
+      node.left = delete(value, node.left)
+    elsif value > node.data
+      node.right = delete(value, node.right)
+    else
+      # if node has one or no child
+      return node.right if node.left.nil?
+      return node.left if node.right.nil?
+
+      # if node has two children
+      leftmost_node = find_replacement(node.right)
+      node.data = leftmost_node.data
+      node.right = delete(leftmost_node.data, node.right)
     end
-    @leaf_nodes.delete(to_del)
-    @value.delete(to_del.data)
+    @leaf_nodes.delete(node)
+    @value.delete(value)
+    puts node
   end
 
-  def find_parent(value, node = self.root)
-    if value == node.data
-      return "#{node.data} is an orphan, it has no parent nodes"
-    elsif value == node.left.data
-       return parent = node
-    elsif value == node.right.data
-      return parent = node
-    elsif value < node.data
-      find_parent(value, node.left)
-    else value > node.data
-      find_parent(value, node.right)
+  def find_replacement(node = self.root)
+    if node.left == nil && node.right == nil
+      return node 
+    else find_replacement(node.left)
     end
-  end 
+  end
 
   def find(value, node = self.root)
     if node == nil
@@ -130,49 +113,85 @@ class BinaryTree
     end
   end
 
-  def level_order(node = self.root)
-    if node != nil
-      @temp_queue << node.data
-      level_order(node.left)
-      level_order(node.right)
+  def level_order(node = self.root, queue = [])
+    print "#{node.data} "
+    queue << node.left unless node.left.nil?
+    queue << node.right unless node.right.nil?
+    return if queue.empty?
+
+    level_order(queue.shift, queue)
+  end
+
+  def inorder(node = self.root)
+    return node if node.nil?
+
+    inorder(node.left)
+    print "#{node.data} "
+    inorder(node.left)
+  end
+
+  def preorder(node = self.root)
+    return node if node.nil?
+    print "#{node.data} "
+    preorder(node.left)
+    preorder(node.right)
+
+  end
+
+  def postorder(node = self.root)
+    return node if node.nil?
+
+    postorder(node.left) 
+    postorder(node.right) 
+    print "#{node.data} "
+  end
+
+  def depth(value, node = self.root, x = 0)
+    if node.data == value
+      puts x
+    else
+      value < node.data ? depth(value, node.left, x += 1) : depth(value, node.right, x += 1)
     end
-    return @temp_queue
   end
 
-  def inorder
-
+  def height(value, node = find(value), x = 0)
+    return node if node.nil?
+    if node.left == nil && node.right == nil
+      return x
+    elsif node.left == nil && node.right != nil
+      height(value, node.right, x += 1)
+    else
+      height(value, node.left, x += 1)
+    end    
   end
 
-  def preorder
-
-  end
-
-  def postorder
-
-  end
-
-  def height
-  
-  end
-
-  def depth(value)
-
-  end
-
-  def balanced?(counter = 0, node = self.root)
-
+  def balanced?
+    value = self.root.data
+    z = height(value, self.root.left)
+    y = height(value, self.root.right)
+    x = z >= y ? z - y : y - z
+    x <= 1 ? true : false   
   end
 
   def rebalance
+    merge_sort(gather)
+  end
 
+  def gather(node = self.root, gath_arr = [])
+    if node != nil
+      gath_arr << node.data
+      gather(node.left)
+      gather(node.right)
+      return gath_arr
+    end
   end
 
   def leaf_node(value)
     node = find(value)
     if node.left == nil && node.right == nil
-        puts "#{value} is a leaf node" 
+        return node
     else
-      puts "#{value} is not a leaf node"
+      puts "#{node.data} is not a leaf node"
     end
   end
 
